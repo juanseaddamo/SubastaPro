@@ -71,6 +71,7 @@ public class SecurityConfig {
                                 "/ws/**",
                                 "/auth/refresh",
                                 "/dev/**",
+                                "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
