@@ -6,21 +6,60 @@ bienes propios, gestionar sus medios de pago y ver su historial.
 
 ---
 
-## 🌐 Deploy
+## 🚀 Cómo correr en local
 
-| Recurso | URL |
-|---------|-----|
-| **Backend (API)** | https://tpodesarrollomovil-production.up.railway.app |
-| **Swagger UI** | https://tpodesarrollomovil-production.up.railway.app/swagger-ui.html |
-| **OpenAPI JSON** | https://tpodesarrollomovil-production.up.railway.app/v3/api-docs |
+### Requisitos
 
-- **Backend:** deployado en **Railway** (build con Nixpacks, sin Docker).
-- **Base de datos:** **Supabase PostgreSQL** (compartida), conectada vía **Session pooler** (IPv4).
-- **Secrets:** las credenciales de la base se leen de variables de entorno (en Railway) o de
-  `backend/.env` (en local). Versiones anteriores del repo las tenían hardcodeadas; esas
-  credenciales ya fueron revocadas. Ver [Deploy del backend](#deploy-del-backend-railway).
+- **JDK 17** o superior (el proyecto incluye Maven Wrapper, no hace falta instalar Maven)
+- **Node.js** (LTS) y npm
+- **Expo**: se usa vía `npx`, no requiere instalación global. Para probar la app: Expo Go en el
+  celular, un emulador Android / simulador iOS, o el navegador.
+- Una base **PostgreSQL** (el proyecto usa Supabase)
 
-### Cuenta de prueba
+### 1. Configurar el backend
+
+1. Copiar `backend/.env.example` como `backend/.env` (está en `.gitignore`, no se sube).
+2. Completar los datos de la base (`SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`,
+   `SPRING_DATASOURCE_PASSWORD`) y un `APP_JWT_SECRET` propio (string aleatorio de 32+ caracteres).
+3. Spring lee el `.env` automáticamente al correr desde `backend/`.
+
+> Con Supabase, la conexión directa (`db.<ref>.supabase.co`) requiere IPv6. Si tu red no lo
+> soporta, usá la URL del **Session pooler** (puerto 5432) y el usuario `postgres.<ref>`.
+
+### 2. Levantar el backend
+
+```bash
+cd backend
+./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
+```
+
+- Levanta en **http://localhost:8080** con el perfil `dev` (el puerto se cambia con la variable `PORT`).
+- **Swagger UI:** http://localhost:8080/swagger-ui.html
+- OpenAPI JSON: http://localhost:8080/v3/api-docs
+
+```bash
+./mvnw test                   # correr tests (usa la base configurada en backend/.env)
+./mvnw clean package          # generar el JAR
+```
+
+### 3. Levantar el frontend
+
+```bash
+cd frontend
+npm install
+npx expo start                # Expo dev server
+```
+
+Por defecto la app apunta al backend local: `http://10.0.2.2:8080` en emulador Android y
+`http://localhost:8080` en web / simulador iOS. Para cambiarla (por ejemplo, en un celular físico
+con Expo Go), copiar `frontend/.env.example` como `frontend/.env` y definir `EXPO_PUBLIC_API_URL`
+con la IP de la PC en la red local (ej. `http://192.168.0.10:8080`). Después de cambiarla,
+reiniciar `npx expo start`. La lógica está en [`frontend/src/api/config.js`](frontend/src/api/config.js).
+
+### Cuenta de prueba (entorno local)
+
+Con el perfil `dev`, si la base está vacía, el backend carga datos de ejemplo al arrancar,
+incluido este usuario:
 
 | Email | Password |
 |-------|----------|
@@ -29,15 +68,21 @@ bienes propios, gestionar sus medios de pago y ver su historial.
 Usuario con KYC activo, categoría **plata** y una tarjeta ARS verificada con saldo (sirve para
 inscribirse y pujar).
 
+### Credenciales
+
+Las credenciales de la base y el secret de JWT se leen de variables de entorno o de
+`backend/.env`; no hay secrets en el código. Versiones anteriores del repo tenían la contraseña de
+la base hardcodeada; esa contraseña ya fue revocada.
+
 ---
 
 ## 🧱 Stack
 
 ### Backend
 - Java 17 · Spring Boot 3.4.5 · Spring Data JPA + Hibernate
-- PostgreSQL (Supabase) / H2 (tests)
+- PostgreSQL (Supabase) / H2 (perfil `test`)
 - Auth con JWT (access + refresh) · Maven · Lombok
-- OpenAPI 3 / Swagger UI
+- OpenAPI 3 / Swagger UI (springdoc)
 
 ### Frontend
 - React Native + Expo SDK 56
@@ -59,72 +104,9 @@ Documentación completa del dominio, reglas de negocio y endpoints: ver [`CLAUDE
 
 ---
 
-## 🚀 Cómo correr en local
-
-### Backend
-
-1. Copiar `backend/.env.example` como `backend/.env` (está en `.gitignore`, no se sube).
-2. Completar `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`.
-3. Correr desde `backend/`: Spring lee el `.env` automáticamente.
-
-```bash
-cd backend
-./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
-```
-
-- Levanta en **http://localhost:8080** con el perfil `dev` (apunta a la Supabase compartida).
-- Swagger local: http://localhost:8080/swagger-ui.html
-
-```bash
-./mvnw test                   # correr tests (perfil test → H2 en memoria)
-./mvnw clean package          # generar el JAR
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npx expo start                # Expo dev server (abrir en Expo Go)
-```
-
-La URL del backend se controla en [`frontend/src/api/config.js`](frontend/src/api/config.js) con la
-constante `USE_REMOTE`:
-
-- `USE_REMOTE = true` → apunta al backend deployado en Railway (**default**, para demo / dispositivo real).
-- `USE_REMOTE = false` → apunta al backend local (`http://10.0.2.2:8080` en emulador Android,
-  `http://localhost:8080` en web / iOS sim).
-
----
-
-## ☁️ Deploy del backend (Railway)
-
-El backend se buildea con **Nixpacks** (autodetección del proyecto Maven, sin Dockerfile).
-Configuración en Railway:
-
-- **Root Directory:** `backend`
-- **Variables de entorno:**
-
-  | Variable | Descripción |
-  |----------|-------------|
-  | `SPRING_PROFILES_ACTIVE` | `prod` |
-  | `SPRING_DATASOURCE_URL` | JDBC del **Session pooler** de Supabase (puerto 5432) |
-  | `SPRING_DATASOURCE_USERNAME` | `postgres.<project-ref>` |
-  | `SPRING_DATASOURCE_PASSWORD` | password de Supabase |
-  | `APP_JWT_SECRET` | secret para firmar los JWT (string largo, ≥ 32 chars) |
-  | `PORT` | lo inyecta Railway automáticamente |
-
-> **Nota:** la conexión **directa** de Supabase (`db.<ref>.supabase.co:5432`) es IPv6-only y falla
-> desde Railway (`Network is unreachable`). Por eso se usa el **Session pooler** (IPv4).
-
-El perfil `prod` ([`application-prod.properties`](backend/src/main/resources/application-prod.properties))
-lee la conexión y los secrets desde estas variables.
-
----
-
 ## 📡 Convenciones de la API
 
-- Base URL: la del deploy (o `http://localhost:8080` en local).
+- Base URL: `http://localhost:8080` en local.
 - Auth: header `Authorization: Bearer {access_token}`.
 - Todas las respuestas viajan dentro del wrapper `ApiResponse<T>` (`{ success, message, data }`);
   los listados dentro de `PagedResponse<T>`.
