@@ -4,11 +4,6 @@ Aplicación móvil para una empresa que organiza **subastas presenciales de arte
 gama**. Permite a los usuarios participar online (puja en vivo), solicitar la consignación de
 bienes propios, gestionar sus medios de pago y ver su historial.
 
-**TPO — Desarrollo de Aplicaciones Interactivas (DAI), UADE 1C2026 · Comisión Martes Tarde**
-
-- **Integrantes:** Forteza Simón · Addamo Juan Segundo · Dillon Lucio
-- **Docentes:** Goddio Claudio · Narducci Adrian
-
 ---
 
 ## 🌐 Deploy
@@ -21,8 +16,9 @@ bienes propios, gestionar sus medios de pago y ver su historial.
 
 - **Backend:** deployado en **Railway** (build con Nixpacks, sin Docker).
 - **Base de datos:** **Supabase PostgreSQL** (compartida), conectada vía **Session pooler** (IPv4).
-- **Secrets:** inyectados por variables de entorno en Railway (no hardcodeados). Ver
-  [Deploy del backend](#deploy-del-backend-railway).
+- **Secrets:** las credenciales de la base se leen de variables de entorno (en Railway) o de
+  `backend/.env` (en local). Versiones anteriores del repo las tenían hardcodeadas; esas
+  credenciales ya fueron revocadas. Ver [Deploy del backend](#deploy-del-backend-railway).
 
 ### Cuenta de prueba
 
@@ -54,7 +50,7 @@ inscribirse y pujar).
 ## 📁 Estructura
 
 ```
-TPO_Desarrollo_Movil/
+SubastaPro/
 ├── backend/    ← Spring Boot (API REST + WebSocket)
 └── frontend/   ← React Native (Expo)
 ```
@@ -66,6 +62,10 @@ Documentación completa del dominio, reglas de negocio y endpoints: ver [`CLAUDE
 ## 🚀 Cómo correr en local
 
 ### Backend
+
+1. Copiar `backend/.env.example` como `backend/.env` (está en `.gitignore`, no se sube).
+2. Completar `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` y `SPRING_DATASOURCE_PASSWORD`.
+3. Correr desde `backend/`: Spring lee el `.env` automáticamente.
 
 ```bash
 cd backend
@@ -130,3 +130,11 @@ lee la conexión y los secrets desde estas variables.
   los listados dentro de `PagedResponse<T>`.
 
 El listado completo de endpoints está en Swagger UI y en [`CLAUDE.md`](CLAUDE.md) (§9).
+
+---
+
+## 👥 Equipo
+
+- Forteza Simón
+- Addamo Juan Segundo
+- Dillon Lucio
